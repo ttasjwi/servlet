@@ -131,4 +131,13 @@ public class HelloServlet extends HttpServlet {
 
 ---
 
+## 페이지 구조
+
+1. main/webapp/index.html
+   - welcome 페이지
+
+2. main/webapp/basic.html
+   - 학습할 내용들
+
+---
 
