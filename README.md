@@ -422,3 +422,39 @@ public class RequestBodyStringServlet extends HttpServlet {
   - 이때, 문자인코딩 UTF-8을 지정하여야 제대로 UTF-8에 맞게 파싱하여 문자열로 만들어준다.
 
 ---
+
+## RequestBodyJsonServlet
+
+```java
+@WebServlet(name = "requestBodyJsonServlet", urlPatterns = "/request-body-json")
+public class RequestBodyJsonServlet extends HttpServlet {
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        ServletInputStream inputStream = request.getInputStream();
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+
+        System.out.println("messageBody = " + messageBody);
+
+        HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);
+
+        System.out.println("helloData.username = " + helloData.getUsername());
+        System.out.println("helloData.age = " + helloData.getAge());
+
+        response.getWriter().write("ok");
+    }
+}
+```
+- json도 결국은 문자데이터. 가져오는 것은 `getInputStream()`, `StreamUtils.copyToString(...)`로 같다.
+- 그런데 스프링부트는 Jackson 라이브러리를 통해 `ObjectMapper`를 함께 제공함
+- ObjectMapper의 readValue를 통해, json 문자열을 객체로 변환할 수 있음
+
+### (참고)
+- html POST 방식 Form을 통해 들어온 바디데이터를, `getInputStream()`, `StreamUtils.copyToString(...)` 을 통해 문자열로 바꿀 수는 있음
+- 하지만 ObjectMapper는 Json 데이터에 대해서만 객체 변환을 지원함.
+- get방식의 queryParameter 또는 html form의 post 방식 요청데이터는 `getParameter`를 통해 처리하는게 좋음
+
+---
+
