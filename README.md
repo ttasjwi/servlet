@@ -139,6 +139,9 @@ public class HelloServlet extends HttpServlet {
 2. main/webapp/basic.html
    - 학습할 내용들
 
+3. main/webapp/basic/hello-form.html
+   - hello-form : form의 submit 버튼을 눌렀을 때 폼에 적힌 입력값을 post방식으로 전송. 요청 리소스는 "/request-param"
+
 ---
 
 ## RequestHeaderServlet
@@ -398,4 +401,3 @@ public class RequestParamServlet extends HttpServlet {
   - `request.getParameterValues("파라미터명")` : 해당 파라미터명에 대응되는 모든 값을 배열로 가져옴
 
 ---
-
