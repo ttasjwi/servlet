@@ -349,3 +349,53 @@ public class RequestHeaderServlet extends HttpServlet {
 
 </div>
 </details>
+
+---
+
+## RequestParamServlet
+
+요청데이터 - 쿼리 파라미터를 받아올 때
+
+```java
+@WebServlet(name = "requestParamServlet", urlPatterns = "/request-param")
+public class RequestParamServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        System.out.println("[전체 파라미터 조회] - start");
+
+        System.out.println("RequestParamServlet.service");
+        request.getParameterNames().asIterator()
+                        .forEachRemaining(paramName -> System.out.println(paramName + "=" + request.getParameter(paramName)));
+
+        System.out.println("[전체 파라미터 조회] - end");
+        System.out.println();
+
+        System.out.println("[단일 파라미터 조회] - start");
+        String username = request.getParameter("username");
+        String age = request.getParameter("age");
+
+        System.out.println("username = " + username);
+        System.out.println("age = " + age);
+
+        System.out.println("[단일 파라미터 조회] - end");
+        System.out.println();
+
+        System.out.println("[이름이 같은 복수 파라미터 조회] - start");
+        String[] usernames = request.getParameterValues("username");
+        for (String name : usernames) {
+            System.out.println("username = " + name);
+        }
+        System.out.println("[이름이 같은 복수 파라미터 조회] - end");
+
+        response.getWriter().write("ok!");
+    }
+}
+```
+- 전체 쿼리 파라미터 접근 : `request.getParameterNames().asIterator().forEachRemaining`
+- 단일 파라미터 조회
+  - `request.getParameter("파라미터명")` : 해당 파라미터명에 대응하는 값을 가져옴. 복수의 값이 있을 경우 제일 첫번째 값을 가져옴
+  - `request.getParameterValues("파라미터명")` : 해당 파라미터명에 대응되는 모든 값을 배열로 가져옴
+
+---
+
