@@ -141,3 +141,211 @@ public class HelloServlet extends HttpServlet {
 
 ---
 
+## RequestHeaderServlet
+
+HttpServletRequest 구현체의 메서드를 실습하기 위한 Servlet
+
+```java
+// http://localhost:8080/request-header?username=hello
+@WebServlet(name = "requestHeaderServlet", urlPatterns = "/request-header")
+public class RequestHeaderServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        printStartLine(request);
+        printHeaders(request);
+        printHeaderUtils(request);
+        printEtc(request);
+
+        response.getWriter().write("ok");
+    }
+    // 중략
+}
+```
+- Http 요청의 StartLine에 대한 정보를 출력하기 위한 `printStartLine(request)`메서드
+- Http 요청의 Header에 담긴 정보를 모두 출력하기 위한 `printHeaders(request)`메서드
+- Http 요청의 Header의 특정 정보들을 출력하는 편의 메서드들만 확인하기 위한 `printHeaderUtils(request)` 메서드
+- Http 요청의 기타 정보 `printEtc(request)` : 요청측(Remote) / 서버측(Local)에 대한 정보들
+
+### printStartLine
+
+<details>
+<summary>소스코드 및 분석</summary>
+<div markdown="1">
+
+```java
+// http://localhost:8080/request-header?username=hello
+@WebServlet(name = "requestHeaderServlet", urlPatterns = "/request-header")
+public class RequestHeaderServlet extends HttpServlet {
+    
+    // 생략
+    
+    //start line 정보
+    private void printStartLine(HttpServletRequest request) {
+        System.out.println("--- REQUEST-LINE - start ---");
+        System.out.println("request.getMethod() = " + request.getMethod()); // HTTP 메서드 - GET
+        System.out.println("request.getProtocal() = " + request.getProtocol()); // 프로토콜 - HTTP/1.1
+        System.out.println("request.getScheme() = " + request.getScheme()); // scheme (사용할 프로토콜 - http)
+
+        // 요청 URL(http://localhost:8080/request-header)
+        System.out.println("request.getRequestURL() = " + request.getRequestURL());
+        // 요청 URI(/request-test)
+        System.out.println("request.getRequestURI() = " + request.getRequestURI());
+        // QueryParameter (username=hi)
+        System.out.println("request.getQueryString() = " + request.getQueryString());
+
+        System.out.println("request.isSecure() = " + request.isSecure()); // https 사용 유무
+        System.out.println("--- REQUEST-LINE - end ---");
+        System.out.println();
+    }
+    
+    // 생랴
+}
+```
+
+#### 1. HTTP 메시지 StartLine : **(요청일 때) 요청 메시지** / (응답일 때) 상태 메시지
+> 메서드 SP request-target SP HTTP-version CRLF
+   - Http메서드
+   - 요청 대상
+   - HTTP 버전
+
+#### 2. 서블릿에서 지원하는 주요 메서드들
+- Http 메서드 : `getMethod()`
+- 요청 대상
+  - 요청 URI : `getRequestURI()`
+  - 쿼리 : `getQueryString()`
+- HTTP 버전(프로토콜) : `getProtocol()`
+
+#### 3. 이 부분에서 추가적으로 다룬 메서드들
+- 요청 URL : `getRequestURL()`
+- scheme : `getScheme()`
+- https 사용유무 : `isSecure()`
+
+</div>
+</details>
+
+### printHeaders / printHeaderUtils
+
+<details>
+<summary>소스코드 및 분석</summary>
+<div markdown="1">
+
+```java
+// http://localhost:8080/request-header?username=hello
+@WebServlet(name = "requestHeaderServlet", urlPatterns = "/request-header")
+public class RequestHeaderServlet extends HttpServlet {
+
+  //Header 모든 정보
+  private void printHeaders(HttpServletRequest request) {
+    System.out.println("--- Headers - start ---");
+
+        /*
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+        String headerName = headerNames.nextElement();
+        System.out.println(headerName + ": " + request.getHeader(headerName));
+        }
+
+        아래와 같은 코드
+        */
+
+    request.getHeaderNames().asIterator()
+            .forEachRemaining(headerName -> System.out.println(headerName + ": " + request.getHeader(headerName)));
+
+    System.out.println("--- Headers - end ---");
+    System.out.println();
+  }
+
+  //Header 편리한 조회
+  private void printHeaderUtils(HttpServletRequest request) {
+    System.out.println("--- Header 편의 조회 start ---");
+
+    System.out.println("[Host 편의 조회]");
+    System.out.println("request.getServerName() = " + request.getServerName()); // Host 헤더(호스트명)
+    System.out.println("request.getServerPort() = " + request.getServerPort()); // Host 헤더(포트명)
+    System.out.println();
+
+    System.out.println("[Accept-Language 편의 조회]");
+    request.getLocales().asIterator()
+            .forEachRemaining(locale -> System.out.println("locale = " + locale));
+    System.out.println("request.getLocale() = " + request.getLocale());
+    System.out.println();
+
+    System.out.println("[cookie 편의 조회]");
+    if (request.getCookies() != null) {
+      for (Cookie cookie : request.getCookies()) {
+        System.out.println(cookie.getName() + ": " + cookie.getValue());
+      }
+    }
+    System.out.println();
+
+    System.out.println("[Content 편의 조회]");
+    System.out.println("request.getContentType() = " + request.getContentType());
+    System.out.println("request.getContentLength() = " + request.getContentLength());
+    System.out.println("request.getCharacterEncoding() = " + request.getCharacterEncoding());
+
+    System.out.println("--- Header 편의 조회 end ---");
+    System.out.println();
+  }
+}
+```
+#### 1. HTTP 메시지 Header : HTTP 전송에 필요한 모든 부가정보
+- 메시지 BODY의 내용, 메시지 BODY의 크기/압축/인증, 요청 클라이언트(브라우저) 정보, 서버 애플리케이션 정보, 캐시 관리 정보, ...
+- "헤더명: ..."의 형태로 전송됨
+
+#### 2. 서블릿의 HTTPRequest Header 관련 메서드
+- `getHeaderNames()` : 헤더명들을 싹 얻어와 이를 기반으로 요청에 관한 정보를 얻어올 수 있음
+- `getHeader("...")` : 원하는 헤더명으로 가져오기
+- Host 조회 메서드
+  - 호스트명 : `getServerName()`
+  - 호스트 포트 : `getServerPort()`
+- 네고시에이션 메서드 - Accept Language
+  - `getLocales()` : 브라우저 설정상에 등록된 선호 자연어들 전체
+  - `getLocale()` : 제일 우선순위가 높은 요구 로케일
+- 쿠키 관련
+  - `getCookies()` : 쿠키들 가져옴
+- Content 메서드
+  - `getContentType()` : 전송된 미디어 타입
+  - `getContentLength()` : 요청의 문자인코딩
+
+
+</div>
+</details>
+
+
+### printEtc
+
+<details>
+<summary>소스코드 및 분석</summary>
+<div markdown="1">
+
+```java
+// http://localhost:8080/request-header?username=hello
+@WebServlet(name = "requestHeaderServlet", urlPatterns = "/request-header")
+public class RequestHeaderServlet extends HttpServlet {
+    
+  //기타 정보
+  private void printEtc(HttpServletRequest request) {
+    System.out.println("--- 기타 조회 start ---");
+
+    System.out.println("[Remote 정보]");
+    System.out.println("request.getRemoteHost() = " + request.getRemoteHost()); // 요청(클라이언트)측에 대한 정보
+    System.out.println("request.getRemoteAddr() = " + request.getRemoteAddr()); //
+    System.out.println("request.getRemotePort() = " + request.getRemotePort()); //
+    System.out.println();
+
+    System.out.println("[Local 정보]");
+    System.out.println("request.getLocalName() = " + request.getLocalName()); // 서버 측에 대한 정보
+    System.out.println("request.getLocalAddr() = " + request.getLocalAddr()); //
+    System.out.println("request.getLocalPort() = " + request.getLocalPort()); //
+
+    System.out.println("--- 기타 조회 end ---");
+    System.out.println();
+  }
+}
+```
+그 외 메서드들
+- getRemoteHost,Addr,Port : 요청 측 ip(디폴트 ipv6), 포트
+- getLocalName,Addr,Prot : 서버 이름, ip, Port
+
+</div>
+</details>
