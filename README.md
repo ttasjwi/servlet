@@ -401,3 +401,24 @@ public class RequestParamServlet extends HttpServlet {
   - `request.getParameterValues("파라미터명")` : 해당 파라미터명에 대응되는 모든 값을 배열로 가져옴
 
 ---
+
+## RequestBodyStringServlet
+```java
+@WebServlet (name = "requestBodyStringServlet", urlPatterns = "/request-body-string")
+public class RequestBodyStringServlet extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        ServletInputStream inputStream = request.getInputStream(); // http 요청을 바이트코드로 바로 얻어올 수 있음
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);// 바이트코드를 문자열로 바꾸기 위해서, UTF-8 인코딩으로 명시해야함
+
+        System.out.println("messageBody = " + messageBody);
+
+        response.getWriter().write("ok");
+    }
+}
+```
+- HttpRequest 메시지 바디에 단순히 순수 텍스트만 전송됐을 때
+- `getInputStream`을 통해 바이트코드 inputStream으로 변환후, `StreamUtils.copyToString`을 통해 문자열로 변환
+  - 이때, 문자인코딩 UTF-8을 지정하여야 제대로 UTF-8에 맞게 파싱하여 문자열로 만들어준다.
+
+---
