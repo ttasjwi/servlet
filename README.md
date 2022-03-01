@@ -557,3 +557,31 @@ public class ResponseHtmlServlet extends HttpServlet {
 - 미디어 타입을 "test/html"으로 지정, 데이터를 `html`으로 전송함
 
 ---
+## ResponseJsonServlet
+```java
+@WebServlet(name = "responseJsonServlet",urlPatterns = "/response-json")
+public class ResponseJsonServlet extends HttpServlet {
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        //Content-Type : application/json
+        response.setContentType("application/json");
+         response.setCharacterEncoding("utf-8");
+
+        HelloData helloData = new HelloData();
+        helloData.setUsername("땃쥐");
+        helloData.setAge(20);
+
+        //{"username":"kim", "age":20}
+        String result = objectMapper.writeValueAsString(helloData); // 객체 -> Json 문자열
+        response.getWriter().write(result);
+    }
+}
+```
+- 응답을 json 타입으로 하려면 Content-Type을 "application/json"으로 하여 보내야함.
+- 객체를 json으로 반환하기 위해, ObjectMapper의 `WriteValueAsString(객체)`으로 객체를 json문자열로 반환 받기
+- json문자열을 `response.getWriter().write(json문자열)`을 통해 Body에 넣어 보냄
+
+---
