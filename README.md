@@ -585,3 +585,10 @@ public class ResponseJsonServlet extends HttpServlet {
 - json문자열을 `response.getWriter().write(json문자열)`을 통해 Body에 넣어 보냄
 
 ---
+
+# 회원관리 웹 애플리케이션
+
+- Member : 회원 도메인
+- MemberRepository : 회원 저장, 조회 담당 (메모리)
+
+---
