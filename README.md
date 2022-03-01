@@ -458,3 +458,78 @@ public class RequestBodyJsonServlet extends HttpServlet {
 
 ---
 
+## ResponseHeaderServlet
+```java
+@WebServlet(name = "responseHeaderServlet", urlPatterns = "/response-header")
+public class ResponseHeaderServlet extends HttpServlet {
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // [status-line]
+        response.setStatus(HttpServletResponse.SC_OK); // 200
+
+        // [response-headers]
+        response.setHeader("Content-Type", "text/plain;charset=utf-8");
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("my-header", "hello");
+
+        // [response-Header 편의 메서드]
+        content(response);
+        cookie(response);
+        redirect(response);
+
+
+        // [message-body]
+        PrintWriter writer = response.getWriter();
+        writer.print("ok");
+    }
+
+
+    private void content(HttpServletResponse response) {
+        // Content-Type: text/plain;charset=utf-8
+
+        //response.setHeader("Content-Type", "text/plain;charset=utf-8");
+
+        response.setContentType("text/plain"); // 미디어 타입
+        response.setCharacterEncoding("utf-8"); // 문자 인코딩
+        // Content-Length: 2
+        // response.setContentLength(2); 생략 시 자동 생성
+    }
+
+    private void cookie(HttpServletResponse response) {
+        //Set-Cookie: myCookie=good; Max-Age=600
+        //response.setHeader("Set-Cookie", "good; Max-Age=600");
+        Cookie cookie = new Cookie("myCookie", "good"); // 쿠키명, 값
+        cookie.setMaxAge(600); // 유효 시간 - 600초, 600초 경과시 쿠키 삭제
+        response.addCookie(cookie); // response에 쿠키 포함
+    }
+
+
+    private void redirect(HttpServletResponse response) throws IOException {
+        //Status Code 302
+        //Location: /basic/hello-form.html
+
+        // response.setStatus(HttpServletResponse.SC_FOUND); // 302
+        // response.setHeader("Location", "/basic/hello-form.html");
+        response.sendRedirect("/basic/hello-form.html"); // 이하의 리소스로 리다이렉션
+    }
+
+}
+```
+- HttpServletResponse 구현체의 메서드를 실습하기 위한 Servlet
+- Http 응답 상태코드 설정 : setStatus(`HttpServletResponse.SC_~`)
+  - `HttpServletResponse.SC_~` : 상태 코드에 해당하는 static 상수
+- Http 응답 헤더 설정 : setHeader("헤더명", "값")
+- Http 응답 편의 메서드
+  1. content~
+     - setContentType("값") : 미디어 타입 지정
+     - setCharacterEncoding("값") : 문자 인코딩 지정.주로 utf-8 지정
+  2. 쿠키
+     - Cookie 생성 : new Cookie("쿠키명", "값")
+     - Cookie 생명주기 : cookie.setMaxAge(값)
+     - 쿠키 추가 : response.addCookie(쿠키)
+  3. 리다이렉트
+     - sendRedirect("로케이션") : 로케이션 위치로 리다이렉션
+
+---
