@@ -586,9 +586,15 @@ public class ResponseJsonServlet extends HttpServlet {
 
 ---
 
-# 회원관리 웹 애플리케이션
+# 회원관리 웹 애플리케이션 도메인, Repository
 
 - Member : 회원 도메인
 - MemberRepository : 회원 저장, 조회 담당 (메모리)
+
+
+## Ver 1 - 순수 서블릿
+- 서블릿에서 요청을 받아 repository에 접근하여 비즈니스 로직을 수행
+- 결과를 java단에서 직접 바로 html 코드를 작성해서 반환함.
+  - 한계 : view에 해당하는 코드가 너무 길어지고, 유지 보수가 매우 힘듬
 
 ---
