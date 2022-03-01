@@ -687,3 +687,45 @@ HttpServletRequest request, HttpServletResponse response
 - 프론트 컨트롤러 패턴(Front Controller Pattern) : 수문장에 해당하는, 공통 기능을 처리하는 컨트롤러 계층을 만들어보자!
 
 ---
+
+## Ver 4 - 프론트 컨트롤러 도입
+```java
+public interface ControllerV1 {
+
+    void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException;
+
+}
+```
+```java
+@WebServlet(name = "FrontControllerServletV1", urlPatterns = "/front-controller/v1/*")
+public class FrontControllerServletV1 extends HttpServlet {
+
+    private Map<String, ControllerV1> controllerMap = new HashMap<>();
+
+    public FrontControllerServletV1() {
+        controllerMap.put("/front-controller/v1/members/new-form", new MemberFormControllerV1());
+        controllerMap.put("/front-controller/v1/members/save", new MemberSaveControllerV1());
+        controllerMap.put("/front-controller/v1/members", new MemberListControllerV1());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("FrontControllerServletV1.service");
+        String requestURI = request.getRequestURI();
+        ControllerV1 controller = controllerMap.get(requestURI);
+        if (controller == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        controller.process(request, response);
+    }
+}
+```
+- 모든 요청에 대하여, 프론트 컨트롤러를 거치도록 함.
+- 실질적으로 호출되는 서블릿은 프론트 컨트롤러 단 하나뿐임.
+- 프론트 컨트롤러에는 내부적으로 `Map<String, ControllerV1>`을 가지고 있음.
+  - key로, 요청 uri, value로는 `ControllerV1`인터페이스의 구현체를 가지고 있다.
+- 요청이 오면, 맵에서 key에 대응하는 컨트롤러를 꺼내고 컨트롤러에 공통적으로 구현된 process 메서드를 실행한다.
+  - (controller를 못 찾으면 상태코드에 404 NotFound를 set하고 반환)
+
+---
