@@ -533,3 +533,27 @@ public class ResponseHeaderServlet extends HttpServlet {
      - sendRedirect("로케이션") : 로케이션 위치로 리다이렉션
 
 ---
+
+## ResponseHtmlServlet
+
+```java
+@WebServlet(name = "responseHtmlServlet", urlPatterns = "/response-html")
+public class ResponseHtmlServlet extends HttpServlet {
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        //Content-Type : text/html;charset=utf-8
+        response.setContentType("text/html");
+        response.setCharacterEncoding("utf-8");
+        PrintWriter writer = response.getWriter();
+        writer.println("<html>");
+        writer.println("<body>");
+        writer.println("  <div>안녕?</div>");
+        writer.println("</body>");
+        writer.println("</html>");
+    }
+}
+```
+- 미디어 타입을 "test/html"으로 지정, 데이터를 `html`으로 전송함
+
+---
