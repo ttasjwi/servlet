@@ -625,4 +625,65 @@ public class ResponseJsonServlet extends HttpServlet {
   - jsp에 주요 비즈니스 로직이 모두 노출됨.
   - view에서 비즈니스 로직까지 전부 수행하는 상황. 유지보수가 매우 힘들어짐.
 
+## Ver 3 - MVC 패턴 적용(servlet + jsp)
+```java
+@WebServlet(name = "mvcMemberSaveServlet", urlPatterns = "/servlet-mvc/members/save")
+public class MvcMemberSaveServlet extends HttpServlet {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("MvcMemberSaveServlet.service");
+
+        String username = request.getParameter("username");
+        int age = Integer.parseInt(request.getParameter("age"));
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        // model에 데이터 보관
+        request.setAttribute("member", member);
+
+        String viewPath = "/WEB-INF/views/save-result.jsp";
+        RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+        dispatcher.forward(request, response);
+    }
+}
+```
+- jsp파일에 파일명으로 접근할 수 없도록 `/WNB-INF`의 하위 경로에 저장
+- url을 통해, 컨트롤러에 거치고, 리소스에 접근함
+- `request.setAttribute`를 통해 요청을 `model`로 삼음. 이곳에 view에 전달할 데이터를 담는다.
+- requestDispatcher의 forward 메서드를 통해, 제어의 주도권을 다음 jsp파일로 넘김.
+- java단(`controller`)에서 순전히 비즈니스 로직을 수행하고, jsp에서는 `view`의 역할만 수행하도록 함.
+
+
+### (ver 3) 한계
+#### 포워드 중복
+```java
+RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+dispatcher.forward(request, response);
+```
+- `dispatcher`를 가져오는 코드, forward 메서드 호출이 계속 중복됨.
+#### ViewPath 중복
+```java
+String viewPath = "/WEB-INF/views/save-result.jsp";
+```
+- `/WEB-INF/views/` 중복
+- `.jsp` 중복 : 나중에 다른 view(thymeleaf, ...)으로 교체하면 jsp 사용한 전체 코드를 싹 다 변경해야함
+#### 불필요한 코드
+```java
+HttpServletRequest request, HttpServletResponse response
+```
+- 쓸 때도 있고 안 쓸 때도 있음.
+- response는 현재 코드에서 아예 안 쓰이고 있음
+- `HttpServletRequest`, `HttpServletResponse`를 사용한 코드는 테스트가 어려움
+#### 공통처리가 어려움
+- 공통으로 처리할 메서드를 따로 분리하면 될 것 같긴한데, 이걸 뽑더라도 매번 항상 호출해야하고 실수로 호출하지 않으면 문제가 생김
+- 호출하는 그 행위 자체도 중복임
+
+### (ver 3) 개선안?
+- 컨트롤러 호출 전에 공통기능을 처리할 계층이 필요함
+- 프론트 컨트롤러 패턴(Front Controller Pattern) : 수문장에 해당하는, 공통 기능을 처리하는 컨트롤러 계층을 만들어보자!
+
 ---
