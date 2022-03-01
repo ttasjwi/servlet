@@ -595,6 +595,34 @@ public class ResponseJsonServlet extends HttpServlet {
 ## Ver 1 - 순수 서블릿
 - 서블릿에서 요청을 받아 repository에 접근하여 비즈니스 로직을 수행
 - 결과를 java단에서 직접 바로 html 코드를 작성해서 반환함.
-  - 한계 : view에 해당하는 코드가 너무 길어지고, 유지 보수가 매우 힘듬
+- 한계
+  - html을 작성하는 코드가 너무 길어져버림.
+
+
+## Ver 2 - jsp(java Server Pages)
+```
+<%@ page import="com.ttasjwi.servlet.domain.Member" %>
+<%@ page import="com.ttasjwi.servlet.domain.MemberRepository" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    //request, response 사용 가능.
+
+    MemberRepository memberRepository = MemberRepository.getInstance();
+
+    System.out.println("MemberSaveServlet.service");
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+
+    Member member = new Member(username, age);
+    memberRepository.save(member);
+%>
+<html>
+<head>
+```
+- html에 자바 코드를 작성하여, 비즈니스 로직과 view를 모두 수행
+- 서버에서 실행되면 jsp가 서블릿으로 변환됨
+- 한계
+  - jsp에 주요 비즈니스 로직이 모두 노출됨.
+  - view에서 비즈니스 로직까지 전부 수행하는 상황. 유지보수가 매우 힘들어짐.
 
 ---
