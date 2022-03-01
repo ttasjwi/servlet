@@ -729,3 +729,67 @@ public class FrontControllerServletV1 extends HttpServlet {
   - (controller를 못 찾으면 상태코드에 404 NotFound를 set하고 반환)
 
 ---
+
+## Ver 5 - View를 담당하는 MyView 추가
+### MyView
+```java
+public class MyView {
+
+    private String viewPath; // view 경로
+
+    public MyView(String viewPath) {
+        this.viewPath = viewPath;
+    }
+
+    // 렌더링
+    public void render(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewPath);
+        requestDispatcher.forward(request, response);
+    }
+
+}
+```
+- MyView는 내부적으로 viewPath(jsp 경로)를 가짐
+- render 메서드 호출 시, requestDispatcher.forward를 통해, 제어의 주도권을 jsp쪽으로 넘김
+  - 즉, 실질적으로 이 메서드를 호출하면 렌더링이 됨.
+
+
+### ControllerV2, FrontControllerServletV2
+```java
+public interface ControllerV2 {
+
+    MyView process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException;
+
+}
+```
+```java
+@WebServlet(name = "FrontControllerServletV2", urlPatterns = "/front-controller/v2/*")
+public class FrontControllerServletV2 extends HttpServlet {
+
+    private Map<String, ControllerV2> controllerMap = new HashMap<>();
+
+    public FrontControllerServletV2() {
+        controllerMap.put("/front-controller/v2/members/new-form", new MemberFormControllerV2());
+        controllerMap.put("/front-controller/v2/members/save", new MemberSaveControllerV2());
+        controllerMap.put("/front-controller/v2/members", new MemberListControllerV2());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+      
+        String requestURI = request.getRequestURI();
+        ControllerV2 controller = controllerMap.get(requestURI);
+        if (controller == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        MyView view = controller.process(request, response);
+        view.render(request, response);
+    }
+}
+```
+- V1과 대부분 로직은 같은데, Controller에서 MyView를 반환하게 하고 MyView를 통해 렌더링하게 함.
+- 이제 각 Controller에서는 View를 수행하지 않고 FrontController 계층에서 view를 공통처리하게 됨
+
+---
