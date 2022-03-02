@@ -887,3 +887,68 @@ public class MyView {
 
 ---
 
+## Ver 7 - Controller에서 viewName만 반환하도록 함
+```java
+public interface ControllerV4 {
+
+    /**
+     * @param paramMap
+     * @param model
+     * @return viewName
+     */
+
+    String process(Map<String,String> paramMap, Map<String,Object> model);
+
+}
+```
+```java
+@WebServlet(name = "frontControllerServletV4", urlPatterns = "/front-controller/v4/*")
+public class FrontControllerServletV4 extends HttpServlet {
+
+    private Map<String, ControllerV4> controllerMap = new HashMap<>();
+
+    public FrontControllerServletV4() {
+        controllerMap.put("/front-controller/v4/members/new-form", new MemberFormControllerV4());
+        controllerMap.put("/front-controller/v4/members/save", new MemberSaveControllerV4());
+        controllerMap.put("/front-controller/v4/members", new MemberListControllerV4());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+        ControllerV4 controller = controllerMap.get(requestURI);
+        if (controller == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        Map<String, String> paramMap = createParamMap(request); // HttpServletRequest의 모든 Parameter를 뽑아서, Map으로 만듬
+        Map<String, Object> model = new HashMap<>();
+
+        String viewName = controller.process(paramMap, model); // paramMap을 기반으로 비즈니스 로직을 수행하고 model을 변형, view의 논리적 이름을 반환.
+
+        MyView view = viewResolver(viewName);  // 논리이름을 경로명으로 변환한뒤 MyView 생성
+        view.render(model, request, response); // 렌더링
+    }
+
+    private Map<String, String> createParamMap(HttpServletRequest request) {
+        Map<String, String> paramMap = new HashMap<>();
+
+        request.getParameterNames().asIterator()
+                .forEachRemaining(
+                        paramName -> paramMap.put(paramName, request.getParameter(paramName)));
+        return paramMap;
+    }
+
+    private MyView viewResolver(String viewName) {
+        return new MyView("/WEB-INF/views/" + viewName + ".jsp");
+    }
+}
+```
+- 기존 코드 : 컨트롤러에서 Model을 생성하고, modelView에 viewName을 함께 반환해야하는 수고를 들여야했음.
+- 변경 코드
+  - 프론트 컨트롤러에서 Model을 생성하고, parameter로 paramMap과 Model을 함께 넘김.
+  - 컨트롤러에서는 인자로 주입된 `model`에 데이터를 담고, `viewName`만 반환하면 됨.
+
+---
