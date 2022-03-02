@@ -793,3 +793,97 @@ public class FrontControllerServletV2 extends HttpServlet {
 - 이제 각 Controller에서는 View를 수행하지 않고 FrontController 계층에서 view를 공통처리하게 됨
 
 ---
+
+## Ver 6 - Model 및 ViewResolver 추가
+
+### FrontController의 책임 증가, But 나머지 Controller의 편의성 증가
+```java
+@WebServlet(name = "frontControllerServletV3", urlPatterns = "/front-controller/v3/*")
+public class FrontControllerServletV3 extends HttpServlet {
+
+    private Map<String, ControllerV3> controllerMap = new HashMap<>();
+
+    public FrontControllerServletV3() {
+        controllerMap.put("/front-controller/v3/members/new-form", new MemberFormControllerV3());
+        controllerMap.put("/front-controller/v3/members/save", new MemberSaveControllerV3());
+        controllerMap.put("/front-controller/v3/members", new MemberListControllerV3());
+    }
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+        ControllerV3 controller = controllerMap.get(requestURI);
+        if (controller == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        // HttpServletRequest의 모든 Parameter를 뽑아서, Map으로 만듬
+        Map<String, String> paramMap = createParamMap(request); 
+
+        // paramMap을 기반으로 비즈니스 로직을 수행하고, ModelView에 view의 논리적 이름과 Model을 담아 반환
+        ModelView mv = controller.process(paramMap);
+
+        String viewName = mv.getViewName();
+        MyView view = viewResolver(viewName);  // 논리이름을 경로명으로 변환한뒤 MyView 생성
+        view.render(mv.getModel(), request, response); // 렌더링
+    }
+
+    private Map<String, String> createParamMap(HttpServletRequest request) {
+        Map<String, String> paramMap = new HashMap<>();
+
+        request.getParameterNames().asIterator()
+                .forEachRemaining(
+                        paramName -> paramMap.put(paramName, request.getParameter(paramName)));
+        return paramMap;
+    }
+
+    private MyView viewResolver(String viewName) {
+        return new MyView("/WEB-INF/views/" + viewName + ".jsp");
+    }
+}
+```
+```java
+public interface ControllerV3 {
+
+    ModelView process(Map<String, String> paramMap);
+}
+```
+- HttpServletRequest의 모든 쿼리 파라미터를 뽑아서 paramMap으로 만듬
+- 각 Controller의 process 메서드는 매개변수로 전달된 paramMap을 기반으로 비즈니스 로직을 수행후 결과를 ModelView에 담아 반환
+  - ModelView에 담긴 것
+    - view의 논리적 이름
+    - Model : view에서 출력할 대상
+  - viewResolver를 통해 view의 논리적 이름을 물리적 경로명으로 변환한뒤 MyView로 변환
+  - MyView에 render 메서드를 통해, model을 넘겨줘서 렌더링
+
+### MyView의 render 메서드 오버로딩
+```java
+public class MyView {
+
+    private String viewPath; // view 경로
+
+    public MyView(String viewPath) {
+        this.viewPath = viewPath;
+    }
+
+    // 생략 //
+
+    public void render(Map<String, Object> model, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        modelToRequestAttribute(model, request); // 모델을 HttpServletRequest에 담음
+        RequestDispatcher requestDispatcher = request.getRequestDispatcher(viewPath); 
+        requestDispatcher.forward(request, response); // 제어의 주도권을 viewPath의 jsp에게 전달
+    }
+
+    private void modelToRequestAttribute(Map<String, Object> model, HttpServletRequest request) {
+        model.forEach((key, value) -> request.setAttribute(key, value));
+    }
+}
+```
+- `modelToRequestAttribute` : model의 요소들을 request에 담음.
+- viewPath에 저장된 물리적 경로에 위치한 jsp에 제어권을 넘김.
+- jsp는 request에 담긴 값들을 기반으로 렌더링
+
+---
+
