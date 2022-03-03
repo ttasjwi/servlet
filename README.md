@@ -626,6 +626,10 @@ public class ResponseJsonServlet extends HttpServlet {
   - view에서 비즈니스 로직까지 전부 수행하는 상황. 유지보수가 매우 힘들어짐.
 
 ## Ver 3 - MVC 패턴 적용(servlet + jsp)
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
 ```java
 @WebServlet(name = "mvcMemberSaveServlet", urlPatterns = "/servlet-mvc/members/save")
 public class MvcMemberSaveServlet extends HttpServlet {
@@ -686,9 +690,16 @@ HttpServletRequest request, HttpServletResponse response
 - 컨트롤러 호출 전에 공통기능을 처리할 계층이 필요함
 - 프론트 컨트롤러 패턴(Front Controller Pattern) : 수문장에 해당하는, 공통 기능을 처리하는 컨트롤러 계층을 만들어보자!
 
----
+
+</div>
+</details>
 
 ## Ver 4 - 프론트 컨트롤러 도입
+
+<details>
+<summary>상새 내역</summary>
+<div markdown="1">
+
 ```java
 public interface ControllerV1 {
 
@@ -728,9 +739,15 @@ public class FrontControllerServletV1 extends HttpServlet {
 - 요청이 오면, 맵에서 key에 대응하는 컨트롤러를 꺼내고 컨트롤러에 공통적으로 구현된 process 메서드를 실행한다.
   - (controller를 못 찾으면 상태코드에 404 NotFound를 set하고 반환)
 
----
+</div>
+</details>
 
 ## Ver 5 - View를 담당하는 MyView 추가
+
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
 ### MyView
 ```java
 public class MyView {
@@ -792,9 +809,14 @@ public class FrontControllerServletV2 extends HttpServlet {
 - V1과 대부분 로직은 같은데, Controller에서 MyView를 반환하게 하고 MyView를 통해 렌더링하게 함.
 - 이제 각 Controller에서는 View를 수행하지 않고 FrontController 계층에서 view를 공통처리하게 됨
 
----
+</div>
+</details>
 
 ## Ver 6 - Model 및 ViewResolver 추가
+
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
 
 ### FrontController의 책임 증가, But 나머지 Controller의 편의성 증가
 ```java
@@ -885,9 +907,14 @@ public class MyView {
 - viewPath에 저장된 물리적 경로에 위치한 jsp에 제어권을 넘김.
 - jsp는 request에 담긴 값들을 기반으로 렌더링
 
----
+</div>
+</details>
 
 ## Ver 7 - Controller에서 viewName만 반환하도록 함
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
 ```java
 public interface ControllerV4 {
 
@@ -951,4 +978,117 @@ public class FrontControllerServletV4 extends HttpServlet {
   - 프론트 컨트롤러에서 Model을 생성하고, parameter로 paramMap과 Model을 함께 넘김.
   - 컨트롤러에서는 인자로 주입된 `model`에 데이터를 담고, `viewName`만 반환하면 됨.
 
+</div>
+</details>
+
 ---
+
+## Ver 8 - HandlerAdapter 계층 추가
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
+### MyHandlerAdapter
+```java
+public interface MyHandlerAdapter {
+
+    boolean supports(Object handler);
+
+    ModelView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws ServletException, IOException;
+
+}
+```
+- supports : 핸들러(컨트롤러)를 지원하는지 여부를 boolean으로 반환
+- handle : 핸들러(컨트롤러)의 비즈니스 로직을 수행후, ModelView에 결과를 담아서 반환함.
+  - ModelView : model, viewName을 가짐
+
+### FrontControllerServletV5
+#### 초기화
+```java
+@WebServlet(name = "frontControllerServletV5", urlPatterns = "/front-controller/v5/*")
+public class FrontControllerServletV5 extends HttpServlet {
+
+  private final Map<String, Object> handlerMappingMap = new HashMap<>();
+  private final List<MyHandlerAdapter> handlerAdapters = new ArrayList<>();
+
+  public FrontControllerServletV5() {
+    initHandlerMappingMap();
+    initHandlerAdapters();
+  }
+
+  private void initHandlerMappingMap() {
+    handlerMappingMap.put("/front-controller/v5/v3/members/new-form", new MemberFormControllerV3());
+    handlerMappingMap.put("/front-controller/v5/v3/members/save", new MemberSaveControllerV3());
+    handlerMappingMap.put("/front-controller/v5/v3/members", new MemberListControllerV3());
+
+    handlerMappingMap.put("/front-controller/v5/v4/members/new-form", new MemberFormControllerV4());
+    handlerMappingMap.put("/front-controller/v5/v4/members/save", new MemberSaveControllerV4());
+    handlerMappingMap.put("/front-controller/v5/v4/members", new MemberListControllerV4());
+  }
+
+  private void initHandlerAdapters() {
+    handlerAdapters.add(new ControllerV3Adapter());
+    handlerAdapters.add(new ControllerV4Adapter());
+  }
+  // 생략 
+}
+```
+- `HandlerMappingMap`에는 컨트롤러를 모아둠
+- `handlerAdapters`에는 여러가지 HandlerAdpater 구현체를 모아둠
+
+
+#### 로직
+```java
+@WebServlet(name = "frontControllerServletV5", urlPatterns = "/front-controller/v5/*")
+public class FrontControllerServletV5 extends HttpServlet {
+    
+    // 초기화 작업 생략
+    
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        Object handler = getHandler(request);
+
+        if (handler == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        MyHandlerAdapter adapter = getHandlerAdapter(handler);
+
+        ModelView mv = adapter.handle(request, response, handler);
+
+        String viewName = mv.getViewName();
+        MyView view = viewResolver(viewName);  // 논리이름을 경로명으로 변환한뒤 MyView 생성
+
+        view.render(mv.getModel(), request, response); // 렌더링
+    }
+
+    private Object getHandler(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        return handlerMappingMap.get(requestURI);
+    }
+
+    private MyHandlerAdapter getHandlerAdapter(Object handler) throws ServletException, IOException {
+        for (MyHandlerAdapter adapter : handlerAdapters) {
+            if (adapter.supports(handler)) {
+                return adapter;
+            }
+        }
+        throw new IllegalAccessError("HandlerAdapter를 찾을 수 없습니다. handler = " + handler);
+    }
+
+    private MyView viewResolver(String viewName) {
+        return new MyView("/WEB-INF/views/" + viewName + ".jsp");
+    }
+}
+```
+- `getHandler` : 요청으로 들어온 `uri`로 핸들러를 `handlerMappingMap`에서 조회
+- 지원하지 않는 uri를 요청할 경우 404 응답
+- `getHandlerAdapter` : `handlerAdapters`를 전체 순회하여, 적합한 adapter를 찾아 반환
+  - 각각의 handlerAdapter 구현체들은 supports 메서드 구현을 통해, 적합한 어댑터인지 알리는 기능을 구현해야한다.
+- `adapter.handle(request, response, handler)` : 가져온 어댑터를 통해 handler의 로직을 수행하고, 결과를 ModelView로 받아옴.
+- `viewResolver(viewName)` : 문자열 `viewName`을 기반으로 물리적 `ViewPath`에 관한 정보를 가진 MyView로 변환
+- `view.render(mv.getModel(), request, response)` : 렌더링
+- 모든 것을 역할에 의존하고 있음. 이후에는 Controller, HandlerAdapter 추가시 로직을 변경할 필요가 없음.
+
+</div>
+</details>
