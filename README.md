@@ -1189,3 +1189,53 @@ public class SpringMemberListControllerV1 {
 
 </div>
 </details>
+
+---
+
+## Spring MVC v2 : 컨트롤러 및 맵핑 url 중복 통합
+
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
+```java
+@Controller
+@RequestMapping("/springmvc/v2/members")
+public class SpringMemberControllerV2 {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @RequestMapping("/new-form")
+    public ModelAndView newForm() {
+        return new ModelAndView("new-form");
+    }
+
+    @RequestMapping("/save")
+    public ModelAndView save(HttpServletRequest request, HttpServletResponse response) {
+        String username = request.getParameter("username");
+        int age = Integer.parseInt(request.getParameter("age"));
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        ModelAndView mv = new ModelAndView("save-result");
+        mv.addObject("member", member); // mv.getModel().put("member",member)와 구조적 동일
+        return mv;
+    }
+
+    //   /springmvc/v2/members
+    @RequestMapping
+    public ModelAndView members() {
+        List<Member> members = memberRepository.findAll();
+        ModelAndView mv = new ModelAndView("members");
+        mv.addObject("members", members); // mv.getModel().put("members",members)와 구조적 동일
+        return mv;
+    }
+}
+```
+- Spring MVC의 컨트롤러는 어노테이션 기반으로 컨트롤러를 맵핑하기 때문에 하나의 컨트롤러 클래스에서 관련된 컨트롤러들을 한번에 관리할 수 있다.
+- 클래스레벨에서 `@RequestMapping` 어노테이션을 달아주면, 공통적으로 겹치는 앞의 URL을 한번에 통합해서 쓸 수 있다.
+  - 각각의 메서드들에서는 어노테이션 뒤에 상세 주소를 덧붙여서 명시해주면 된다.
+
+</div>
+</details>
