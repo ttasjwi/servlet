@@ -1092,3 +1092,36 @@ public class FrontControllerServletV5 extends HttpServlet {
 
 </div>
 </details>
+
+---
+
+# SpringMvc의 구조
+
+1. http 요청
+2. `Dispatcher Servlet` 이 요청의 URI를 기반으로 핸들러 매핑에서 핸들러를 조회함.
+   - 핸들러 등록은 여러가지 방식이 있는데 주로 쓰는 방식은 다음 두 가지이다.
+     - `@RequestMapping` 어노테이션이 붙은 것들을 컨트롤러로 등록
+     - 스프링 빈의 이름으로 컨트롤러들을 맵핑
+      
+3. 핸들러 어댑터 목록에서, 적합한 핸들러 어댑터를 찾아냄
+   - 핸들러 어댑터는 주로 다음의 핸들러 어댑터들이 사용된다.
+     - `RequestMappingHandlerAdapter` : 어노테이션 `@RequestMapping`의 컨트롤러들을 처리
+     - `HttpRequestHandlerAdapter` : `HttpRequestHandler`의 구현체 빈들을 처리
+     - `SimpleControllerHandlerAdapter` : `Controller`의 구현체 빈들을 처리
+
+4. 핸들러 어댑터 실행(handle), ModelAndView 반환
+   - 모델 및 view의 논리적 이름을 얻어냄
+
+5. ViewResolver을 호출하여 View 반환
+   - viewName으로 viewResolver를 호출
+   - `BeanNameResolver` : 빈 이름이 viewName인 `View` 구현체 빈이 있을 경우 해당 View를 반환
+   - `InternalResourceViewResolver` : 스프링 부트에서 자동 등록하는 viewResolver
+     - `application.properties`에 등록한 설정정보를 사용하여 등록(prefix : 경로, suffix : 확장자)
+       - jsp 등록시 이 부분을 수동으로 해줘야함.
+     - `Thymeleaf`와 같은 View 템플릿을 사용하려면 대응하는 뷰 리졸버를 별도로 등록해야하는데 최근엔 스프링 부트가 이런 작업도 모두 자동화 해줌.
+
+6. `view.render(model)`
+   - `InternalResourceView`는 jsp와 같이 `forward()`를 호출하여 처리할 수 있는 경우 사용
+   - `ThymeleafView`는 java단 내부에서 뷰를 처리함
+
+---
