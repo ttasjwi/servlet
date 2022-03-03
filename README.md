@@ -1239,3 +1239,54 @@ public class SpringMemberControllerV2 {
 
 </div>
 </details>
+
+---
+
+## Spring MVC v3 : 실무에서 사용되는 방식
+
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
+```java
+@Controller
+@RequestMapping("/springmvc/v3/members")
+public class SpringMemberControllerV3 {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @GetMapping("/new-form")
+    public String newForm() {
+        return "new-form";
+    }
+
+    @PostMapping("/save")
+    public String save(
+            @RequestParam("username") String username,
+            @RequestParam("age") int age,
+            Model model) {
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        model.addAttribute("member", member);
+        return "save-result";
+    }
+
+    @GetMapping
+    public String members(Model model) {
+
+        List<Member> members = memberRepository.findAll();
+
+        model.addAttribute("members", members);
+        return "members";
+    }
+
+}
+```
+- Parameter : `@RequestParam`을 매개변수 앞에 적어주면 자동으로 요청의 파라미터를 파싱하여 인자로 넣어줌.
+- 반환 : viewName (View의 논리적 이름)
+- Model : Response에 넘길 정보들을 저장할 객체
+
+</div>
+</details>
