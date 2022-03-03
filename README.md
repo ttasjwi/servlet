@@ -586,8 +586,9 @@ public class ResponseJsonServlet extends HttpServlet {
 
 ---
 
-# 회원관리 웹 애플리케이션 도메인, Repository
+# 회원관리 웹 애플리케이션
 
+## 도메인
 - Member : 회원 도메인
 - MemberRepository : 회원 저장, 조회 담당 (메모리)
 
@@ -1125,3 +1126,66 @@ public class FrontControllerServletV5 extends HttpServlet {
    - `ThymeleafView`는 java단 내부에서 뷰를 처리함
 
 ---
+
+# Spring Mvc를 적용한 회원관리 웹 애플리케이션
+
+## Spring MVC v1 : 어노테이션 기반 컨트롤러 도입
+
+<details>
+<summary>상세 내역</summary>
+<div markdown="1">
+
+```java
+//@Component
+//@RequestMapping
+@Controller // RequestMappingHandlerMapping은 클래스레벨에 스프링 빈에 대하여, @RequestMapping 어노테이션 또는 @Controller가 붙어있는 클래스에 대해서만 매핑 정보로 인식한다.
+public class SpringMemberFormControllerV1 {
+
+    @RequestMapping("/springmvc/v1/members/new-form")
+    public ModelAndView process() {
+        return new ModelAndView("new-form");
+    }
+}
+```
+```java
+@Controller
+public class SpringMemberSaveControllerV1 {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @RequestMapping("/springmvc/v1/members/save")
+    public ModelAndView process(HttpServletRequest request, HttpServletResponse response) {
+        String username = request.getParameter("username");
+        int age = Integer.parseInt(request.getParameter("age"));
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        ModelAndView mv = new ModelAndView("save-result");
+        mv.addObject("member", member); // mv.getModel().put("member",member)와 구조적 동일
+        return mv;
+    }
+}
+```
+```java
+@Controller
+public class SpringMemberListControllerV1 {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @RequestMapping("/springmvc/v1/members")
+    public ModelAndView process() {
+        List<Member> members = memberRepository.findAll();
+        ModelAndView mv = new ModelAndView("members");
+        mv.addObject("members", members); // mv.getModel().put("members",members)와 구조적 동일
+        return mv;
+    }
+}
+```
+- 어노테이션 기반 컨트롤러 도입
+- 클래스 명에 `@Controller` 또는 `requestMapping`을 달아주면 RequestMappingHandlerMapping은 이를 매핑 대상으로 인식한다.
+- 메서드별로 인자를 필요에 따라 달아줌. 각각에 맞는 어댑터는 거의 다 구현되어 있다.
+
+
+</div>
+</details>
